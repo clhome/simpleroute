@@ -143,3 +143,11 @@ All configuration data is saved strictly on your local filesystem:
 ## 📜 License
 
 This project is licensed under the [Apache License 2.0](LICENSE). You are free to modify, distribute, and integrate it into your workflows.
+
+---
+
+## 🏢 Copyright & Support
+
+* **Powered By**: Quzhou Yufeng Technology Co., Ltd.
+* **Official Website**: [www.yftec.top](http://www.yftec.top)
+* **Contact Email**: [admin@yftec.top](mailto:admin@yftec.top)

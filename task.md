@@ -86,3 +86,65 @@
 - [x] 升级 .github/workflows/release.yml，使其使用 body_path 指向 release.md 动态生成 Release 内容 <!-- id: 32 -->
 - [x] 审查并微调 release.md，确保首次发布日志精简、严谨且高档 <!-- id: 33 -->
 
+## Phase 12: 产品归属信息集成与 Logo 规格对接 [已完成]
+- [x] 在 task.md 中创建 Phase 12 任务清单跟踪 <!-- id: 34 -->
+- [x] 升级 main.rs，将主窗口高度扩展至 550.0 像素，为底部版权腾出优雅空间 <!-- id: 35 -->
+- [x] 升级 gui.rs，在主面板最底部新增中英自适应的御风科技归属权、官网跳转链接与联系邮箱 <!-- id: 36 -->
+- [x] 升级 readme.md、readme_chinese.md 及 release.md 底部追加版权归属脚注 <!-- id: 37 -->
+- [x] 提供完整的 Logo 图片规格列表与未来代码二阶段集成改造指南 <!-- id: 38 -->
+
+## Phase 13: 全套专属品牌 Logo 集成开发与部署 [已完成]
+- [x] 在 task.md 中创建 Phase 13 任务清单跟踪 <!-- id: 39 -->
+- [x] 升级 Cargo.toml，引入极轻量官方 png 解压库依赖 <!-- id: 40 -->
+- [x] 升级 app.rc，注入 1 ICON "src/img/logo.ico" 实现 EXE 的系统图标替换 <!-- id: 41 -->
+- [x] 升级 main.rs，解码并载入 logo32.png 替代原算法生成的托盘蓝色圆圈图标 <!-- id: 42 -->
+- [x] 升级 main.rs，解析 logo64.png 并配置主视口图标 .with_icon(window_icon) <!-- id: 43 -->
+- [x] 编译测试验证，确保最终生成的 simpleroute.exe 图标及界面品牌完全定制化且运行正常 <!-- id: 44 -->
+
+## Phase 14: 超长网卡名布局错位与控制台黑框消除优化 [已完成]
+- [x] 在 task.md 中创建 Phase 14 任务清单跟踪 <!-- id: 45 -->
+- [x] 升级 main.rs，添加 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] 属性以彻底消除 Windows 运行时的黑色控制台窗口 <!-- id: 46 -->
+- [x] 升级 gui.rs，设计超长字符串截断工具函数，并应用在网卡选择 ComboBox 显示文本中，彻底防止界面被长网卡名撑开错位 <!-- id: 47 -->
+- [x] 编译测试验证，确保 Release 版本下无黑框弹出且长网卡名下界面排版规整精致 <!-- id: 48 -->
+
+
+## Phase 15: 彻底消除控制台黑框与超长网卡名UI完美适配 [已完成]
+- [x] 在 task.md 中创建 Phase 15 任务清单跟踪 <!-- id: 49 -->
+- [x] 升级 main.rs，将属性宏 `#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]` 替换为无条件 `#![windows_subsystem = "windows"]`，彻底在任何编译模式下消除命令行黑框 <!-- id: 50 -->
+- [x] 升级 gui.rs，优化默认网卡文本前缀（引入极简图标，缩短中英前缀），并将 ComboBox 的选中文字截断长度从 `24` 调整为 `16`，从根本上防止 UI 挤压变形 <!-- id: 51 -->
+- [x] 编译测试验证，确保不论是调试还是正式发布，窗口无黑框且排版在超长网卡名下完美规整 <!-- id: 52 -->
+
+
+## Phase 16: Mbps速率转换、流量历史对比、无边框及公司Logo Header集成 [已完成]
+- [x] 在 task.md 中创建 Phase 16 任务清单跟踪 <!-- id: 53 -->
+- [x] 升级 config.rs，在 AppConfig 中增加 today_traffic_mb, yesterday_traffic_mb, last_traffic_date 持久化字段，支持 serde(default) 向后兼容 <!-- id: 54 -->
+- [x] 升级 main.rs，隐藏 Windows 默认标题栏头部，调整视口高度到 570px，并在后台监控线程中实现今日流量每秒累加与跨天平滑更替以及 Mbps 报警阈值校验 <!-- id: 55 -->
+- [x] 升级 gui.rs，载入并缓存公司 logo32.png 图像纹理，替换顶部 Emoji 图标为公司 Logo 纹理，实现无边框自定义 Header 与可平滑拖动视口，将前台所有速度单位由 MB/s 转换为 Mbps，并在最底部新增昨日今日总流量对比百分比（正红负绿） <!-- id: 56 -->
+- [x] 编译测试验证，确保功能流畅、跨天正常，无边框拖动及 UI 视觉极其 premium 完美 <!-- id: 57 -->
+
+
+## Phase 17: 无边框标题栏平滑拖拽与交互优化
+- [x] 在 task.md 中创建 Phase 17 任务清单跟踪 <!-- id: 58 -->
+- [x] 升级 gui.rs 中的自定义标题栏拖拽交互，剔除右侧操作按钮区并使用专属 Sense::drag 触发 StartDrag 拖动 <!-- id: 59 -->
+- [x] 编译测试验证，确保主窗体拖拽如丝般顺滑，且最小化/关闭按钮操作完全灵敏正常 <!-- id: 60 -->
+
+
+## Phase 18: 系统托盘右键菜单响应修复与反馈升级
+- [x] 在 task.md 中创建 Phase 18 任务清单跟踪 <!-- id: 61 -->
+- [x] 升级 gui.rs，在主线程 update 函数中注入对托盘双击与菜单事件的轮询拦截逻辑，直接操控窗口行为 <!-- id: 62 -->
+- [x] 升级 main.rs，清除原本在后台子线程中不生效的托盘事件监听机制，杜绝资源竞争 <!-- id: 63 -->
+- [x] 编译测试验证，确保双击托盘、右键菜单点击完美响应，且添加重检命令的精美 UI 双语弹窗提示 <!-- id: 64 -->
+
+
+## Phase 19: 托盘生命周期主线程托管与后台强行唤醒重构
+- [x] 在 task.md 中创建 Phase 19 任务清单跟踪 <!-- id: 65 -->
+- [x] 升级 gui.rs，使 SimplerouteApp 结构体托管持有 TrayIcon 的生命周期，并彻底移除前台失效的 try_recv 轮询以回归极简 <!-- id: 67 -->
+- [x] 升级 main.rs，在 run_native 闭包（主线程）中安全构建系统托盘，并在后台事件监听中加入 ctx.request_repaint() 强唤醒源，强行击穿隐藏挂起 <!-- id: 66 -->
+- [x] 静态编译与运行联调测试，彻底验证完全隐藏（Visible(false)）下，双击、右键与退出 100% 实时响应 <!-- id: 68 -->
+
+
+## Phase 20: 移除最小化按钮与托盘流量动态悬浮提示 [已完成]
+- [x] 在 task.md 中创建 Phase 20 任务清单跟踪 <!-- id: 69 -->
+- [x] 升级 gui.rs 中的自定义标题栏，去掉最小化按钮并微调拖拽响应区 <!-- id: 70 -->
+- [x] 升级 gui.rs，在 SimplerouteApp 中实现系统托盘悬浮提示的动态更新 <!-- id: 71 -->
+- [x] 编译测试验证，确保功能正常运行 <!-- id: 72 -->

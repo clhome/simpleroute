@@ -3400,6 +3400,7 @@ dependencies = [
  "lazy_static",
  "notify-rust",
  "parking_lot",
+ "png 0.17.16",
  "serde",
  "serde_json",
  "tray-icon",

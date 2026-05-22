@@ -32,10 +32,15 @@ pub struct SimplerouteApp {
     error_message: Option<String>,
     success_message: Option<String>,
     message_timer: f64,
+    
+    logo_texture: Option<egui::TextureHandle>, // 缓存公司 Logo 图像纹理
+    
+    _tray: tray_icon::TrayIcon, // 用来维持托盘的生命周期，加下划线避免 unused 警告
+    last_tooltip_text: String, // 缓存上次设置的托盘 Tooltip，避免每一帧重复调用
 }
 
 impl SimplerouteApp {
-    pub fn new(state: Arc<RwLock<SharedState>>) -> Self {
+    pub fn new(state: Arc<RwLock<SharedState>>, tray: tray_icon::TrayIcon) -> Self {
         Self {
             state,
             new_name: String::new(),
@@ -45,6 +50,9 @@ impl SimplerouteApp {
             error_message: None,
             success_message: None,
             message_timer: 0.0,
+            logo_texture: None,
+            _tray: tray,
+            last_tooltip_text: String::new(),
         }
     }
 
@@ -134,6 +142,25 @@ fn custom_toggle_ui(ui: &mut egui::Ui, on: &mut bool) -> egui::Response {
 
 impl eframe::App for SimplerouteApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // 懒加载公司 logo 纹理
+        let logo_tex = self.logo_texture.get_or_insert_with(|| {
+            let png_bytes = include_bytes!("img/logo32.png");
+            let decoder = png::Decoder::new(&png_bytes[..]);
+            let mut reader = decoder.read_info().unwrap();
+            let mut buf = vec![0; reader.output_buffer_size()];
+            let info = reader.next_frame(&mut buf).unwrap();
+            let rgba = buf[..info.buffer_size()].to_vec();
+            
+            ctx.load_texture(
+                "logo32",
+                egui::ColorImage::from_rgba_unmultiplied(
+                    [info.width as usize, info.height as usize],
+                    &rgba,
+                ),
+                Default::default()
+            )
+        }).clone();
+
         // 拦截点击右上角“关闭”按钮事件：取消窗口真正的退出关闭，改为仅将其隐藏
         if ctx.input(|i| i.viewport().close_requested()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -152,13 +179,14 @@ impl eframe::App for SimplerouteApp {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
             }
             if state.exit_requested.load(Ordering::Relaxed) {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                return;
+                // 直接强行退出进程，避免 ViewportCommand::Close 被 close_requested 拦截
+                let _ = crate::config::save_config(&state.config);
+                std::process::exit(0);
             }
         }
 
-        // 读取当前全局网速及配置
-        let (rx_speed, tx_speed, mut alarm_limit, mut alarm_enabled, lang) = {
+        // 读取当前全局网速、配置与今日/昨日流量
+        let (rx_speed, tx_speed, mut alarm_limit, mut alarm_enabled, lang, today_traffic, yesterday_traffic) = {
             let state = self.state.read();
             (
                 state.current_rx_speed,
@@ -166,8 +194,41 @@ impl eframe::App for SimplerouteApp {
                 state.config.alarm_limit_mb,
                 state.config.enable_alarm,
                 state.lang,
+                state.config.today_traffic_mb,
+                state.config.yesterday_traffic_mb,
             )
         };
+
+        // 动态更新系统托盘的 Tooltip，仅在内容确实改变时才更新，降低系统调用开销
+        let tooltip_text = {
+            let today_traffic_str = format_traffic(today_traffic);
+            let diff_percent_str = if yesterday_traffic == 0.0 {
+                if today_traffic == 0.0 {
+                    "0.0%".to_string()
+                } else {
+                    "+100.0%".to_string()
+                }
+            } else {
+                let diff = (today_traffic - yesterday_traffic) / yesterday_traffic * 100.0;
+                if diff > 0.0 {
+                    format!("+{:.1}%", diff)
+                } else if diff < 0.0 {
+                    format!("{:.1}%", diff)
+                } else {
+                    "0.0%".to_string()
+                }
+            };
+
+            match lang {
+                Language::Zh => format!("simpleroute 今日流量：{}（{}）", today_traffic_str, diff_percent_str),
+                Language::En => format!("simpleroute Today: {} ({})", today_traffic_str, diff_percent_str),
+            }
+        };
+
+        if tooltip_text != self.last_tooltip_text {
+            let _ = self._tray.set_tooltip(Some(&tooltip_text));
+            self.last_tooltip_text = tooltip_text;
+        }
 
         // UI 风格设置：采用极富科技感的暗色微光色调
         let mut visuals = egui::Visuals::dark();
@@ -179,18 +240,44 @@ impl eframe::App for SimplerouteApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             let dt = ui.input(|i| i.stable_dt) as f64;
             
-            // 顶部大标题
-            ui.add_space(6.0);
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("⚙️ Simpleroute").size(18.0).strong().color(egui::Color32::from_rgb(0, 180, 216)));
-                ui.label(egui::RichText::new(lang.t("静态路由托盘管理器", "Static Route Tray Manager")).size(12.0).color(egui::Color32::from_rgb(150, 150, 160)));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button(lang.t("最小化至托盘", "Minimize to Tray")).clicked() {
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-                    }
-                });
-            });
-            ui.add_space(8.0);
+            // 顶部自定义精美无边框标题栏 (嵌入公司专属图标，支持视口平滑拖拽)
+            let header_response = egui::Frame::none()
+                .fill(egui::Color32::from_rgb(26, 26, 32))
+                .inner_margin(egui::Margin {
+                    left: 10.0,
+                    right: 10.0,
+                    top: 8.0,
+                    bottom: 8.0,
+                })
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        // 嵌入公司 Logo 纹理
+                        ui.image((logo_tex.id(), egui::vec2(16.0, 16.0)));
+                        ui.add_space(4.0);
+                        // 标题名称
+                        ui.label(egui::RichText::new("Simpleroute").strong().color(egui::Color32::from_rgb(0, 180, 216)).size(14.0));
+                        ui.label(egui::RichText::new(lang.t("静态路由托盘管理器", "Tray Manager")).size(11.0).color(egui::Color32::from_rgb(130, 130, 140)));
+                        
+                        // 窗口操作按钮：关闭按钮 (隐藏到托盘)
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            // 关闭按钮
+                            let close_btn = ui.add(egui::Button::new(egui::RichText::new("❌").size(10.0)).frame(false));
+                            if close_btn.clicked() {
+                                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+                            }
+                        });
+                    });
+                }).response;
+
+            // 剔除右侧 30 像素的关闭按钮区域，在左侧绝大部分标题栏区域内注册专属拖拽交互，提供极佳的手感
+            let mut drag_rect = header_response.rect;
+            drag_rect.max.x -= 30.0;
+            let drag_response = ui.interact(drag_rect, ui.id().with("header_drag"), egui::Sense::drag());
+            if drag_response.dragged() {
+                ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+            }
+
+            ui.add_space(4.0);
 
             // 提示信息栏
             self.show_info_messages(ui, dt);
@@ -214,23 +301,27 @@ impl eframe::App for SimplerouteApp {
                                 let default_wireless = interfaces.iter().find(|i| i.is_wireless && i.is_active);
                                 if let Some(dw) = default_wireless {
                                     if lang == Language::Zh {
-                                        format!("自动优先 (无线): {}", dw.friendly_name)
+                                        format!("📶 自动(无线): {}", dw.friendly_name)
                                     } else {
-                                        format!("Auto Priority (Wireless): {}", dw.friendly_name)
+                                        format!("📶 Auto(Wifi): {}", dw.friendly_name)
                                     }
                                 } else if let Some(first_active) = interfaces.iter().find(|i| i.is_active) {
                                     if lang == Language::Zh {
-                                        format!("自动优先 (有线): {}", first_active.friendly_name)
+                                        format!("🔌 自动(有线): {}", first_active.friendly_name)
                                     } else {
-                                        format!("Auto Priority (Wired): {}", first_active.friendly_name)
+                                        format!("🔌 Auto(Wired): {}", first_active.friendly_name)
                                     }
                                 } else {
-                                    lang.t("自动选择默认网卡", "Auto Select Default Interface").to_string()
+                                    if lang == Language::Zh {
+                                        "🔍 自动选择".to_string()
+                                    } else {
+                                        "🔍 Auto Select".to_string()
+                                    }
                                 }
                             });
                             
                             egui::ComboBox::new("interface_select", "")
-                                .selected_text(&selected_text)
+                                .selected_text(&truncate_str(&selected_text, 16))
                                 .width(220.0)
                                 .show_ui(ui, |ui| {
                                     let is_default = current_selected.is_none();
@@ -283,7 +374,7 @@ impl eframe::App for SimplerouteApp {
                             .show(&mut columns[0], |ui| {
                                 ui.label(egui::RichText::new(lang.t("📥 下载速率", "📥 Download Rate")).size(11.0).color(egui::Color32::from_rgb(120, 180, 200)));
                                 ui.add_space(4.0);
-                                ui.label(egui::RichText::new(format!("{:.2} MB/s", rx_speed)).size(20.0).strong().color(egui::Color32::from_rgb(0, 180, 160)));
+                                ui.label(egui::RichText::new(format!("{:.2} Mbps", rx_speed * 8.0)).size(20.0).strong().color(egui::Color32::from_rgb(0, 180, 160)));
                             });
                         
                         // 发送流量卡片
@@ -294,7 +385,7 @@ impl eframe::App for SimplerouteApp {
                             .show(&mut columns[1], |ui| {
                                 ui.label(egui::RichText::new(lang.t("📤 上传速率", "📤 Upload Rate")).size(11.0).color(egui::Color32::from_rgb(180, 120, 200)));
                                 ui.add_space(4.0);
-                                ui.label(egui::RichText::new(format!("{:.2} MB/s", tx_speed)).size(20.0).strong().color(egui::Color32::from_rgb(180, 50, 180)));
+                                ui.label(egui::RichText::new(format!("{:.2} Mbps", tx_speed * 8.0)).size(20.0).strong().color(egui::Color32::from_rgb(180, 50, 180)));
                             });
                     });
 
@@ -312,7 +403,7 @@ impl eframe::App for SimplerouteApp {
                         }
                         
                         ui.add_space(12.0);
-                        ui.label(egui::RichText::new(lang.t("报警值 (MB/s):", "Alarm Value (MB/s):")).size(12.0));
+                        ui.label(egui::RichText::new(lang.t("报警值 (Mbps):", "Alarm Value (Mbps):")).size(12.0));
                         
                         let mut alarm_limit_str = format!("{:.1}", alarm_limit);
                         ui.add(egui::TextEdit::singleline(&mut alarm_limit_str).desired_width(50.0));
@@ -602,6 +693,66 @@ impl eframe::App for SimplerouteApp {
                         }
                     });
                 });
+
+            ui.add_space(8.0);
+            ui.separator();
+            ui.add_space(6.0);
+
+            // 流量统计累加与昨日/今日对比 (MB)
+
+            // 计算环比波动 (今日与昨日相比)
+            let (diff_text, diff_color) = if yesterday_traffic == 0.0 {
+                if today_traffic == 0.0 {
+                    ("0.0%".to_string(), egui::Color32::from_rgb(150, 150, 160)) // 灰色
+                } else {
+                    ("+100.0%".to_string(), egui::Color32::from_rgb(220, 80, 80)) // 红色
+                }
+            } else {
+                let diff = (today_traffic - yesterday_traffic) / yesterday_traffic * 100.0;
+                if diff > 0.0 {
+                    (format!("+{:.1}%", diff), egui::Color32::from_rgb(220, 80, 80)) // 红色
+                } else if diff < 0.0 {
+                    (format!("{:.1}%", diff), egui::Color32::from_rgb(46, 125, 50)) // 绿色
+                } else {
+                    ("0.0%".to_string(), egui::Color32::from_rgb(150, 150, 160)) // 灰色
+                }
+            };
+
+            // 绘制昨日/今日总流量与环比对比
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(lang.t("今日流量: ", "Today: ")).size(10.0).color(egui::Color32::from_rgb(160, 160, 170)));
+                ui.label(egui::RichText::new(format_traffic(today_traffic)).size(10.5).strong().color(egui::Color32::WHITE));
+                
+                ui.add_space(6.0);
+                ui.label(egui::RichText::new("|").size(10.0).color(egui::Color32::from_rgb(60, 60, 70)));
+                ui.add_space(6.0);
+                
+                ui.label(egui::RichText::new(lang.t("昨日流量: ", "Yesterday: ")).size(10.0).color(egui::Color32::from_rgb(160, 160, 170)));
+                ui.label(egui::RichText::new(format_traffic(yesterday_traffic)).size(10.5).strong().color(egui::Color32::WHITE));
+                
+                ui.add_space(6.0);
+                ui.label(egui::RichText::new("|").size(10.0).color(egui::Color32::from_rgb(60, 60, 70)));
+                ui.add_space(6.0);
+                
+                ui.label(egui::RichText::new(lang.t("环比对比: ", "Change: ")).size(10.0).color(egui::Color32::from_rgb(160, 160, 170)));
+                ui.label(egui::RichText::new(diff_text).size(10.5).strong().color(diff_color));
+            });
+
+            ui.add_space(6.0);
+            ui.separator();
+            ui.add_space(6.0);
+
+            // 底部归属与联系信息
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(lang.t("产品归属：衢州御风科技有限公司", "Powered by: Quzhou Yufeng Technology Co., Ltd.")).size(10.0).color(egui::Color32::from_rgb(120, 120, 130)));
+                ui.label(egui::RichText::new("|").size(10.0).color(egui::Color32::from_rgb(80, 80, 90)));
+                ui.hyperlink_to(
+                    egui::RichText::new("www.yftec.top").size(10.0).color(egui::Color32::from_rgb(0, 180, 216)),
+                    "http://www.yftec.top"
+                );
+                ui.label(egui::RichText::new("|").size(10.0).color(egui::Color32::from_rgb(80, 80, 90)));
+                ui.label(egui::RichText::new(lang.t("邮箱：admin@yftec.top", "Email: admin@yftec.top")).size(10.0).color(egui::Color32::from_rgb(120, 120, 130)));
+            });
         });
     }
 }
@@ -639,6 +790,24 @@ pub fn setup_chinese_font(ctx: &egui::Context) {
             vec.insert(0, "chinese_font".to_owned());
         }
         ctx.set_fonts(fonts);
+    }
+}
+
+/// 辅助函数：当字符串过长时截断并以 "..." 结尾，防止 UI 被超长文本挤压变形。
+fn truncate_str(s: &str, max_chars: usize) -> String {
+    if s.chars().count() > max_chars {
+        s.chars().take(max_chars).collect::<String>() + "..."
+    } else {
+        s.to_string()
+    }
+}
+
+/// 辅助函数：将 MB 流量智能转换为 MB 或 GB 单位，增强阅读体验。
+fn format_traffic(mb: f64) -> String {
+    if mb >= 1024.0 {
+        format!("{:.2} GB", mb / 1024.0)
+    } else {
+        format!("{:.2} MB", mb)
     }
 }
 

@@ -15,3 +15,10 @@
 ---
 
 *Licensed under the [Apache-2.0 License](LICENSE).*
+
+---
+
+### 🏢 Copyright & Support (版权与技术支持)
+* **Powered By / 产品归属**: 衢州御风科技有限公司 (Quzhou Yufeng Technology Co., Ltd.)
+* **Official Website / 官方网站**: [www.yftec.top](http://www.yftec.top)
+* **Contact Email / 联系邮箱**: [admin@yftec.top](mailto:admin@yftec.top)

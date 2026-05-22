@@ -143,3 +143,11 @@ Simpleroute (Windows 应用程序)
 ## 📜 许可证 (License)
 
 本项目采用 [Apache-2.0 许可证](LICENSE) 开源。您可以自由进行修改、分发与二次开发。
+
+---
+
+## 🏢 版权与产品支持 (Copyright & Support)
+
+* **产品归属**：衢州御风科技有限公司
+* **官方网站**：[www.yftec.top](http://www.yftec.top)
+* **联系邮箱**：[admin@yftec.top](mailto:admin@yftec.top)

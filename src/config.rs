@@ -31,18 +31,28 @@ pub struct RouteItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub routes: Vec<RouteItem>,
-    pub alarm_limit_mb: f64, // 流量报警限值，单位为 MB/s
+    pub alarm_limit_mb: f64, // 流量报警限值，界面单位为 Mbps
     pub enable_alarm: bool,  // 是否开启流量报警
     pub selected_interface_name: Option<String>, // 用户选中的网卡名称，None表示默认选择
+    
+    #[serde(default)]
+    pub today_traffic_mb: f64,       // 今日总流量，单位 MB
+    #[serde(default)]
+    pub yesterday_traffic_mb: f64,   // 昨日总流量，单位 MB
+    #[serde(default)]
+    pub last_traffic_date: String,   // 上次统计流量的日期
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             routes: Vec::new(),
-            alarm_limit_mb: 10.0, // 默认 10MB/s
-            enable_alarm: false,  // 默认关闭报警
+            alarm_limit_mb: 100.0, // 默认 100 Mbps
+            enable_alarm: false,   // 默认关闭报警
             selected_interface_name: None,
+            today_traffic_mb: 0.0,
+            yesterday_traffic_mb: 0.0,
+            last_traffic_date: String::new(),
         }
     }
 }
