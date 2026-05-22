@@ -1,15 +1,19 @@
 # Simpleroute - Minimalist Windows Static Route Tray Daemon
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/clhome/bt_simple/master/web/static/img/logo.png" width="360" />
+  <h3 align="center">御风 simple route</h3>
+  <p align="center">Minimalist Windows Static Route Tray Daemon</p>
+
 [简体中文](readme_chinese.md) | English
 
-[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://microsoft.com/windows)
-[![Language](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org)
-[![UI Framework](https://img.shields.io/badge/UI-egui-green.svg)](https://github.com/emilk/egui)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://microsoft.com/windows)  [![Language](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org)  [![UI Framework](https://img.shields.io/badge/UI-egui-green.svg)](https://github.com/emilk/egui)  [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 `Simpleroute` is an **elegant, ultra-lightweight, and highly stable** static route tray manager built exclusively for the Windows platform. Written in Rust and utilizing the GPU-accelerated `egui` framework without any heavy browser WebView dependency, the application runs persistently in the Windows system tray.
 
 It is designed to seamlessly assist developers, network engineers, and power users who frequently switch between corporate intranets, public internets, Virtual Private Networks (VPNs), or multi-NIC hybrid environments, offering one-click routing toggle, active guard, and real-time traffic monitoring.
+
+![image-20260522162232734](readme.assets/image-20260522162232734.png)
 
 ---
 

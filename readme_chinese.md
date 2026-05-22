@@ -1,15 +1,20 @@
 # Simpleroute - 极简 Windows 静态路由托盘守护工具
+<p align="center">
+  <img src="https://raw.githubusercontent.com/clhome/bt_simple/master/web/static/img/logo.png" width="360" />
+  <h3 align="center">御风 simple route</h3>
+  <p align="center">极简 Windows 静态路由托盘守护工具</p>
+
+
 
 简体中文 | [English](readme.md)
 
-[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://microsoft.com/windows)
-[![Language](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org)
-[![UI Framework](https://img.shields.io/badge/UI-egui-green.svg)](https://github.com/emilk/egui)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://microsoft.com/windows)  [![Language](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org)  [![UI Framework](https://img.shields.io/badge/UI-egui-green.svg)](https://github.com/emilk/egui)  [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 `Simpleroute` 是一个专为 Windows 平台打造的**高档、极轻量、高度稳定**的静态路由托盘守护管理工具。该程序常驻于 Windows 任务栏右下角托盘，使用 Rust 语言配合纯 GPU 硬件加速的 `egui` 无 WebView 渲染引擎开发。
 
 它能完美帮助经常需要在公司内网、外网、虚拟专用网 (VPN) 或多网卡混合开发网络之间频繁切换的开发者与运维人员，实现静态路由规则的一键快捷切换、状态守护与实时流量监测。
+
+![image-20260522162232734](readme.assets/image-20260522162232734.png)
 
 ---
 
