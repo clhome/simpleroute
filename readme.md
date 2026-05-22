@@ -13,7 +13,7 @@
 
 It is designed to seamlessly assist developers, network engineers, and power users who frequently switch between corporate intranets, public internets, Virtual Private Networks (VPNs), or multi-NIC hybrid environments, offering one-click routing toggle, active guard, and real-time traffic monitoring.
 
-![image-20260522162232734](readme.assets/image-20260522162232734.png)
+![image-20260522162232734](readme.assets/image-20260522162232734.jpg)
 
 ---
 
