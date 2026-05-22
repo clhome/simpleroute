@@ -157,7 +157,7 @@ fn main() -> eframe::Result {
             .with_maximize_button(false)
             .with_decorations(false) // 隐藏 Windows 默认窗口头部边框
             .with_icon(load_window_icon())
-            .with_visible(true), // 启动时默认显示主界面，便于直观管理
+            .with_visible(false), // 启动时默认静默隐藏到托盘，不打扰用户
         ..Default::default()
     };
 
@@ -210,6 +210,14 @@ fn main() -> eframe::Result {
             thread::spawn(move || {
                 while let Ok(event) = tray_icon::menu::MenuEvent::receiver().recv() {
                     if event.id == "show" {
+                        // 防御性地重新查找并缓存一次主窗口 HWND，确保启动隐藏状态下也能 100% 成功拉起
+                        #[cfg(target_os = "windows")]
+                        {
+                            let state = state_clone.read();
+                            let window_title = state.lang.t("Simpleroute 静态路由托盘管理器", "Simpleroute Route Manager");
+                            find_and_cache_hwnd(window_title);
+                        }
+
                         // 通过 Win32 原生 API 直接拉起窗口（完全绕过 eframe 隐藏时的内部停滞）
                         #[cfg(target_os = "windows")]
                         win32_show_window();
@@ -240,10 +248,19 @@ fn main() -> eframe::Result {
 
             // 启动专属的后台托盘双击事件接收线程
             let ctx_clone2 = egui_ctx.clone();
+            let state_clone2 = state_app.clone();
             thread::spawn(move || {
                 while let Ok(event) = tray_icon::TrayIconEvent::receiver().recv() {
                     match event {
                         tray_icon::TrayIconEvent::DoubleClick { .. } => {
+                            // 防御性地重新查找并缓存一次主窗口 HWND，确保启动隐藏状态下也能 100% 成功拉起
+                            #[cfg(target_os = "windows")]
+                            {
+                                let state = state_clone2.read();
+                                let window_title = state.lang.t("Simpleroute 静态路由托盘管理器", "Simpleroute Route Manager");
+                                find_and_cache_hwnd(window_title);
+                            }
+
                             // 通过 Win32 原生 API 直接拉起窗口
                             #[cfg(target_os = "windows")]
                             win32_show_window();

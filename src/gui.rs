@@ -204,24 +204,25 @@ impl eframe::App for SimplerouteApp {
             let today_traffic_str = format_traffic(today_traffic);
             let diff_percent_str = if yesterday_traffic == 0.0 {
                 if today_traffic == 0.0 {
-                    "0.0%".to_string()
+                    "0%".to_string()
                 } else {
-                    "+100.0%".to_string()
+                    "+100%".to_string()
                 }
             } else {
                 let diff = (today_traffic - yesterday_traffic) / yesterday_traffic * 100.0;
                 if diff > 0.0 {
-                    format!("+{:.1}%", diff)
+                    format!("+{:.0}%", diff)
                 } else if diff < 0.0 {
-                    format!("{:.1}%", diff)
+                    format!("{:.0}%", diff)
                 } else {
-                    "0.0%".to_string()
+                    "0%".to_string()
                 }
             };
 
             match lang {
-                Language::Zh => format!("simpleroute 今日流量：{}（{}）", today_traffic_str, diff_percent_str),
-                Language::En => format!("simpleroute Today: {} ({})", today_traffic_str, diff_percent_str),
+                // 压缩字数以完美适配 Windows 托盘单行显示阈值，避免系统强制换行
+                Language::Zh => format!("御风 simpleroute 今日流量：{}（{}）", today_traffic_str, diff_percent_str),
+                Language::En => format!("YF simpleroute Today: {} ({})", today_traffic_str, diff_percent_str),
             }
         };
 
@@ -260,8 +261,12 @@ impl eframe::App for SimplerouteApp {
                         
                         // 窗口操作按钮：关闭按钮 (隐藏到托盘)
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            // 关闭按钮
-                            let close_btn = ui.add(egui::Button::new(egui::RichText::new("❌").size(10.0)).frame(false));
+                            // 关闭按钮：字号放大并扩展 Hitbox 交互感应热区至 24x24 像素，显著提升点击命中率
+                            let close_btn = ui.add(
+                                egui::Button::new(egui::RichText::new("❌").size(12.0))
+                                    .frame(false)
+                                    .min_size(egui::vec2(24.0, 24.0))
+                            );
                             if close_btn.clicked() {
                                 ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
                             }
@@ -269,9 +274,9 @@ impl eframe::App for SimplerouteApp {
                     });
                 }).response;
 
-            // 剔除右侧 30 像素的关闭按钮区域，在左侧绝大部分标题栏区域内注册专属拖拽交互，提供极佳的手感
+            // 剔除右侧 36 像素的关闭按钮区域，在左侧绝大部分标题栏区域内注册专属拖拽交互，提供极佳的手感
             let mut drag_rect = header_response.rect;
-            drag_rect.max.x -= 30.0;
+            drag_rect.max.x -= 36.0;
             let drag_response = ui.interact(drag_rect, ui.id().with("header_drag"), egui::Sense::drag());
             if drag_response.dragged() {
                 ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
