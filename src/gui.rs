@@ -37,6 +37,7 @@ pub struct SimplerouteApp {
     
     _tray: tray_icon::TrayIcon, // 用来维持托盘的生命周期，加下划线避免 unused 警告
     last_tooltip_text: String, // 缓存上次设置的托盘 Tooltip，避免每一帧重复调用
+    first_frame_hidden: bool,  // 是否已在第一帧强制进行隐藏，以实现静默启动
 }
 
 impl SimplerouteApp {
@@ -53,6 +54,7 @@ impl SimplerouteApp {
             logo_texture: None,
             _tray: tray,
             last_tooltip_text: String::new(),
+            first_frame_hidden: false,
         }
     }
 
@@ -142,6 +144,12 @@ fn custom_toggle_ui(ui: &mut egui::Ui, on: &mut bool) -> egui::Response {
 
 impl eframe::App for SimplerouteApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // 第一次渲染帧时，强制发送 Visible(false) 命令，以确保无论 winit/UAC 初始化状态如何，窗口都能静默隐藏启动
+        if !self.first_frame_hidden {
+            self.first_frame_hidden = true;
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+        }
+
         // 懒加载公司 logo 纹理
         let logo_tex = self.logo_texture.get_or_insert_with(|| {
             let png_bytes = include_bytes!("img/logo32.png");
