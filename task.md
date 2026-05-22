@@ -174,3 +174,10 @@
 - [x] 在 task.md 中创建 Phase 24 任务清单跟踪 <!-- id: 84 -->
 - [x] 升级 gui.rs 中的 SimplerouteApp 增加 first_frame_hidden 字段，在第一帧渲染时强制 Visible(false) 确保完全隐藏 <!-- id: 85 -->
 - [x] 编译测试验证，确认完美达成启动静默无感 <!-- id: 86 -->
+
+## Phase 25: UAC 发布者未知与数字签名科普及产品版权资源完善 [已完成]
+- [x] 在 task.md 中创建 Phase 25 任务清单跟踪 <!-- id: 87 -->
+- [x] 升级 app.rc，利用 `#pragma code_page(65001)` 注入带中文的 `VS_VERSION_INFO` 资源（公司、版权、文件描述等元数据） <!-- id: 88 -->
+- [x] 编译测试验证，确保编译无任何乱码或错误，并在 exe 的右键属性详细信息中呈现完美的版权和公司信息 <!-- id: 89 -->
+
+
