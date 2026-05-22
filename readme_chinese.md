@@ -1,5 +1,7 @@
 # Simpleroute - 极简 Windows 静态路由托盘守护工具
 
+简体中文 | [English](readme.md)
+
 [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://microsoft.com/windows)
 [![Language](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org)
 [![UI Framework](https://img.shields.io/badge/UI-egui-green.svg)](https://github.com/emilk/egui)

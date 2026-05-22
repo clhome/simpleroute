@@ -1,5 +1,7 @@
 # Simpleroute - Minimalist Windows Static Route Tray Daemon
 
+[简体中文](readme_chinese.md) | English
+
 [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://microsoft.com/windows)
 [![Language](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org)
 [![UI Framework](https://img.shields.io/badge/UI-egui-green.svg)](https://github.com/emilk/egui)
